@@ -6,14 +6,15 @@ name: Agent — about (description + topics)
 #   description : "<description du repo, ~1 ligne>"
 #   topics      : "chrome-extension,browser-extension,..." (séparés par des virgules)
 # Met à jour la description (About) et les topics du dépôt via le GITHUB_TOKEN.
-# administration:write est nécessaire pour PATCH /repos et PUT /repos/.../topics.
+# v3 : administration:write RETIRÉE (non supportée par le GITHUB_TOKEN → startup_failure).
+# Sans cette permission le PATCH/PUT échouera en 403 — pour l'About utiliser plutôt
+# about_direct.py côté Electra (PAT avec administration:read+write).
 
 on:
   repository_dispatch:
     types: [about]
 
 permissions:
-  administration: write
   contents: read
 
 jobs:
@@ -29,14 +30,16 @@ jobs:
           REPO="${{ github.repository }}"
           if [ -n "$DESC" ]; then
             gh api -X PATCH "/repos/$REPO" -f description="$DESC" > /dev/null \
-              && echo "Description mise à jour : $DESC"
+              && echo "Description mise à jour : $DESC" \
+              || echo "PATCH refusé (403) : utiliser about_direct.py côté Electra (PAT administration)."
           else
             echo "Aucune description fournie — inchangée."
           fi
           if [ -n "$TOPICS" ]; then
             printf '%s' "$TOPICS" | python3 -c "import json,sys; print(json.dumps({'names': [t.strip() for t in sys.stdin.read().split(',') if t.strip()]}))" > /tmp/topics.json
             gh api -X PUT "/repos/$REPO/topics" --input /tmp/topics.json > /dev/null \
-              && echo "Topics mis à jour : $TOPICS"
+              && echo "Topics mis à jour : $TOPICS" \
+              || echo "PUT refusé (403) : utiliser about_direct.py côté Electra (PAT administration)."
           else
             echo "Aucun topic fourni — inchangés."
           fi
