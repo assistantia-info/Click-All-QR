@@ -1,0 +1,39 @@
+/* QR cliquable — couche overlay (une seule couche fixe par frame) */
+
+#qr-cliquable-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+}
+
+a.qr-cliquable-badge {
+  pointer-events: auto;
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 60%, #000000 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+a.qr-cliquable-badge:hover {
+  transform: scale(1.18);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+a.qr-cliquable-badge svg {
+  display: block;
+  pointer-events: none;
+}

@@ -1,0 +1,48 @@
+name: Agent — pages (README + Privacy)
+
+# Click All QR agent v1 — module Pages
+# Publie README et PRIVACY en HTML sur https://assistantia-info.github.io/Click-All-QR/
+# Déclencheurs : repository_dispatch (types: [pages]) ou workflow_dispatch (manuel).
+# ⚠️ Premier déploiement : activer UNE fois dans Settings → Pages →
+#    « Build and deployment → Source = GitHub Actions » (le GITHUB_TOKEN ne peut
+#    pas activer Pages lui-même). Ensuite, ce workflow suffit à chaque mise à jour.
+
+on:
+  repository_dispatch:
+    types: [pages]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Convertir Markdown en HTML (pandoc) + index
+        run: |
+          mkdir -p _site
+          pandoc README.md -s --metadata title="Click All QR" -o _site/README.html
+          pandoc PRIVACY.md -s --metadata title="Click All QR — Privacy Policy" -o _site/PRIVACY.html
+          cp PRIVACY.md _site/PRIVACY.md
+          printf '<!doctype html><html lang="en"><meta charset="utf-8"><title>Click All QR</title><body><h1>Click All QR</h1><p>Make every QR code on a web page clickable. 100%% local, no ads, no account.</p><p><a href="README.html">README</a> · <a href="PRIVACY.html">Privacy policy</a></p><p>Repository: <a href="https://github.com/assistantia-info/Click-All-QR">github.com/assistantia-info/Click-All-QR</a></p></body></html>' > _site/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

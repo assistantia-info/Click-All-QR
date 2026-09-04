@@ -1,0 +1,66 @@
+name: Agent — apply payload
+
+# Click All QR agent v1 — module apply-payload
+# Déclenché par un repository_dispatch envoyé par Electra (ou un pilote autorisé).
+# Payload attendu (client_payload) :
+#   message:  "<message de commit>"                      (optionnel)
+#   files:    [ { "path": "<chemin dans le repo>", "content_b64": "<base64>" } ]
+#   delete:   [ "<chemin à supprimer>" ]                 (optionnel)
+# Limite pratique : ≤ 50 KB de contenu base64 par dispatch.
+# Au-delà : pousser via l'API Git data (script Electra) comme pour le push initial.
+
+on:
+  repository_dispatch:
+    types: [apply-payload]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Appliquer le payload (fichiers base64)
+        env:
+          PAYLOAD_JSON: ${{ toJson(github.event.client_payload) }}
+        run: |
+          python3 - "$PAYLOAD_JSON" <<'PY'
+          import base64, json, pathlib, sys
+          data = json.loads(sys.argv[1])
+          applied = 0
+          for f in data.get("files", []):
+              p = pathlib.Path(f["path"])
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(base64.b64decode(f["content_b64"]))
+              applied += 1
+              print("écrit :", f["path"])
+          removed = 0
+          for path in data.get("delete", []):
+              p = pathlib.Path(path)
+              if p.exists():
+                  p.unlink()
+                  removed += 1
+                  print("supprimé :", path)
+          print(f"Payload appliqué : {applied} fichier(s) écrit(s), {removed} supprimé(s).")
+          PY
+
+      - name: Commit et push (si changement)
+        env:
+          MSG: ${{ github.event.client_payload.message }}
+        run: |
+          git config user.name "assistantia-agent"
+          git config user.email "assistantia-info@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Aucun changement après application du payload — rien à committer."
+          else
+            git commit -m "${MSG:-Agent: application de payload}"
+            git push
+            echo "Push effectué sur $(git branch --show-current)."
+          fi

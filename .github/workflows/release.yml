@@ -1,0 +1,66 @@
+name: Agent — release
+
+# Click All QR agent v1 — module release
+# Déclenché par un repository_dispatch envoyé par Electra (ou un pilote autorisé).
+# Payload attendu (client_payload) :
+#   tag:    "v0.1.1"
+#   title:  "Click All QR v0.1.1 — first release"
+#   notes:  "<markdown des notes, bilingue EN/FR>"
+# Le zip attaché est TOUJOURS propre : un dossier click-all-qr/ contenant
+# uniquement manifest.json, background.js, content.js, overlay.css, vendor/jsQR.js
+# et icons/ — pas les fichiers du dépôt (README, PRIVACY, .github...).
+# Le sha256 du zip est injecté automatiquement dans les notes.
+
+on:
+  repository_dispatch:
+    types: [release]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fabriquer le zip propre (dossier click-all-qr/)
+        run: |
+          mkdir -p /tmp/pkg/click-all-qr/vendor /tmp/pkg/click-all-qr/icons
+          cp manifest.json background.js content.js overlay.css /tmp/pkg/click-all-qr/
+          cp vendor/jsQR.js /tmp/pkg/click-all-qr/vendor/
+          cp icons/*.png /tmp/pkg/click-all-qr/icons/
+          cd /tmp/pkg && zip -qr "$GITHUB_WORKSPACE/click-all-qr.zip" click-all-qr
+          cd "$GITHUB_WORKSPACE" && sha256sum click-all-qr.zip
+
+      - name: Écrire les notes de release (sha256 injecté)
+        env:
+          NOTES: ${{ github.event.client_payload.notes }}
+          TAG: ${{ github.event.client_payload.tag }}
+        run: |
+          if [ -n "$NOTES" ]; then printf '%s\n' "$NOTES" > notes.md; fi
+          if [ ! -s notes.md ]; then printf 'Release %s\n' "$TAG" > notes.md; fi
+          SHA=$(sha256sum click-all-qr.zip | cut -d' ' -f1)
+          if grep -q "coller après génération" notes.md; then
+            python3 - "$SHA" <<'PY'
+          import pathlib, sys
+          p = pathlib.Path("notes.md")
+          t = p.read_text(encoding="utf-8")
+          t = t.replace("[à coller après génération]", sys.argv[1])
+          p.write_text(t, encoding="utf-8")
+          print("sha256 injecté dans les notes :", sys.argv[1])
+          PY
+          else
+            printf '\nSha256 of the zip / Empreinte du zip : `%s`\n' "$SHA" >> notes.md
+          fi
+
+      - name: Créer (ou compléter) la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.client_payload.tag }}
+          TITLE: ${{ github.event.client_payload.title }}
+        run: |
+          gh release create "$TAG" click-all-qr.zip --title "$TITLE" --notes-file notes.md --latest \
+            || gh release upload "$TAG" click-all-qr.zip --clobber
+          gh release edit "$TAG" --notes-file notes.md
+          echo "Release $TAG en place (zip + notes bilingues)."
