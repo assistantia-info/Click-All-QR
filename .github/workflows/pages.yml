@@ -4,6 +4,8 @@ name: Agent — pages (README + Privacy)
 # Publie README et PRIVACY en HTML sur https://assistantia-info.github.io/Click-All-QR/
 # Déclencheurs : repository_dispatch (types: [pages]) ou workflow_dispatch (manuel).
 # v3 : administration:write RETIRÉE (non supportée par le GITHUB_TOKEN → startup_failure).
+# v4 : pandoc INSTALLÉ explicitement (retiré des images ubuntu-latest → exit 127
+#      « pandoc: command not found » constaté sur le run 33928312989).
 # Le déploiement standard (upload + deploy-pages) ne demande que pages:write + id-token:write.
 # Pages doit être activé une fois : Settings → Pages → Source = GitHub Actions
 # (ou via script Electra pages_enable.py avec un PAT ayant administration:write).
@@ -30,6 +32,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Installer pandoc (non préinstallé sur ubuntu-latest)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends pandoc
 
       - name: Convertir Markdown en HTML (pandoc) + index
         run: |
