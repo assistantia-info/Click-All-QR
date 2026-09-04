@@ -1,0 +1,42 @@
+name: Agent — about (description + topics)
+
+# Click All QR agent v1 — module About
+# Déclenché par un repository_dispatch (types: [about]).
+# Payload attendu (client_payload) :
+#   description : "<description du repo, ~1 ligne>"
+#   topics      : "chrome-extension,browser-extension,..." (séparés par des virgules)
+# Met à jour la description (About) et les topics du dépôt via le GITHUB_TOKEN.
+# administration:write est nécessaire pour PATCH /repos et PUT /repos/.../topics.
+
+on:
+  repository_dispatch:
+    types: [about]
+
+permissions:
+  administration: write
+  contents: read
+
+jobs:
+  about:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mettre à jour description et topics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DESC: ${{ github.event.client_payload.description }}
+          TOPICS: ${{ github.event.client_payload.topics }}
+        run: |
+          REPO="${{ github.repository }}"
+          if [ -n "$DESC" ]; then
+            gh api -X PATCH "/repos/$REPO" -f description="$DESC" > /dev/null \
+              && echo "Description mise à jour : $DESC"
+          else
+            echo "Aucune description fournie — inchangée."
+          fi
+          if [ -n "$TOPICS" ]; then
+            printf '%s' "$TOPICS" | python3 -c "import json,sys; print(json.dumps({'names': [t.strip() for t in sys.stdin.read().split(',') if t.strip()]}))" > /tmp/topics.json
+            gh api -X PUT "/repos/$REPO/topics" --input /tmp/topics.json > /dev/null \
+              && echo "Topics mis à jour : $TOPICS"
+          else
+            echo "Aucun topic fourni — inchangés."
+          fi

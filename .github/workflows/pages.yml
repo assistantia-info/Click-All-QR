@@ -3,9 +3,10 @@ name: Agent — pages (README + Privacy)
 # Click All QR agent v1 — module Pages
 # Publie README et PRIVACY en HTML sur https://assistantia-info.github.io/Click-All-QR/
 # Déclencheurs : repository_dispatch (types: [pages]) ou workflow_dispatch (manuel).
-# ⚠️ Premier déploiement : activer UNE fois dans Settings → Pages →
-#    « Build and deployment → Source = GitHub Actions » (le GITHUB_TOKEN ne peut
-#    pas activer Pages lui-même). Ensuite, ce workflow suffit à chaque mise à jour.
+# v2 : configure-pages enablement=true + administration:write → le workflow ACTIVE
+# Pages lui-même au premier déploiement (plus d'étape manuelle dans Settings).
+# Si une politique d'organisation bloque l'enablement : activer une fois
+# Settings → Pages → Source = GitHub Actions, puis relancer l'ordre.
 
 on:
   repository_dispatch:
@@ -16,6 +17,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  administration: write
 
 concurrency:
   group: github-pages
@@ -39,6 +41,8 @@ jobs:
           printf '<!doctype html><html lang="en"><meta charset="utf-8"><title>Click All QR</title><body><h1>Click All QR</h1><p>Make every QR code on a web page clickable. 100%% local, no ads, no account.</p><p><a href="README.html">README</a> · <a href="PRIVACY.html">Privacy policy</a></p><p>Repository: <a href="https://github.com/assistantia-info/Click-All-QR">github.com/assistantia-info/Click-All-QR</a></p></body></html>' > _site/index.html
 
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
