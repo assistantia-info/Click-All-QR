@@ -1,15 +1,17 @@
 name: Agent — release
 
-# Click All QR agent v1 — module release
+# Click All QR agent v1 — module release (v2)
 # Déclenché par un repository_dispatch envoyé par Electra (ou un pilote autorisé).
-# Payload attendu (client_payload) :
-#   tag:    "v0.1.1"
-#   title:  "Click All QR v0.1.1 — first release"
-#   notes:  "<markdown des notes, bilingue EN/FR>"
+# Payload attendu (client_payload, tous optionnels) :
+#   tag:    défaut = "v" + version lue dans manifest.json (plus jamais de bump oublié)
+#   title:  défaut = "Click All QR <tag>"
+#   notes:  "<markdown des notes, bilingue EN/FR>" (placeholder sha256 auto-injecté)
 # Le zip attaché est TOUJOURS propre : un dossier click-all-qr/ contenant
-# uniquement manifest.json, background.js, content.js, overlay.css, vendor/jsQR.js
-# et icons/ — pas les fichiers du dépôt (README, PRIVACY, .github...).
-# Le sha256 du zip est injecté automatiquement dans les notes.
+# uniquement les fichiers de l'extension (manifest, background, content, overlay,
+# popup.*, README-INSTALL.txt, icons/) — pas le README du dépôt, pas PRIVACY,
+# pas .github/, pas tests/. Le sha256 du zip est injecté automatiquement dans les notes.
+# v2 : version dynamique (manifest), vendor/jsQR.js supprimé (décodage natif),
+#      popup inclus, tests exclus du paquet.
 
 on:
   repository_dispatch:
@@ -26,9 +28,12 @@ jobs:
 
       - name: Fabriquer le zip propre (dossier click-all-qr/)
         run: |
-          mkdir -p /tmp/pkg/click-all-qr/vendor /tmp/pkg/click-all-qr/icons
-          cp manifest.json background.js content.js overlay.css /tmp/pkg/click-all-qr/
-          cp vendor/jsQR.js /tmp/pkg/click-all-qr/vendor/
+          VERSION=$(jq -r .version manifest.json)
+          echo "RELEASE_TAG=v${VERSION}" >> "$GITHUB_ENV"
+          echo "RELEASE_TITLE=Click All QR v${VERSION}" >> "$GITHUB_ENV"
+          mkdir -p /tmp/pkg/click-all-qr/icons
+          cp manifest.json background.js content.js overlay.css \
+             popup.html popup.js popup.css README-INSTALL.txt /tmp/pkg/click-all-qr/
           cp icons/*.png /tmp/pkg/click-all-qr/icons/
           cd /tmp/pkg && zip -qr "$GITHUB_WORKSPACE/click-all-qr.zip" click-all-qr
           cd "$GITHUB_WORKSPACE" && sha256sum click-all-qr.zip
@@ -39,7 +44,7 @@ jobs:
           TAG: ${{ github.event.client_payload.tag }}
         run: |
           if [ -n "$NOTES" ]; then printf '%s\n' "$NOTES" > notes.md; fi
-          if [ ! -s notes.md ]; then printf 'Release %s\n' "$TAG" > notes.md; fi
+          if [ ! -s notes.md ]; then printf 'Release %s\n' "${TAG:-$RELEASE_TAG}" > notes.md; fi
           SHA=$(sha256sum click-all-qr.zip | cut -d' ' -f1)
           if grep -q "coller après génération" notes.md; then
             python3 - "$SHA" <<'PY'
@@ -60,7 +65,9 @@ jobs:
           TAG: ${{ github.event.client_payload.tag }}
           TITLE: ${{ github.event.client_payload.title }}
         run: |
+          TAG="${TAG:-$RELEASE_TAG}"
+          TITLE="${TITLE:-$RELEASE_TITLE}"
           gh release create "$TAG" click-all-qr.zip --title "$TITLE" --notes-file notes.md --latest \
             || gh release upload "$TAG" click-all-qr.zip --clobber
           gh release edit "$TAG" --notes-file notes.md
-          echo "Release $TAG en place (zip + notes bilingues)."
+          echo "Release $TAG en place (zip + notes)."

@@ -23,20 +23,21 @@ A QR code shows up **on your own screen** — in a screenshot someone sent you, 
 
 **Click All QR** detects QR codes on any web page and drops a small badge on each one. Click the badge → the link opens in a new tab. That's it.
 
-- 🔒 **100% local** — detection and decoding happen in your browser. No image is ever uploaded. No server exists.
+- 🔒 **100% local** — detection and decoding happen in your browser, via the native `BarcodeDetector` API. No image is ever uploaded. No server exists. **No bundled library.**
 - 🚫 **No ads, no account, no telemetry** — nothing is collected, nothing is tracked, ever.
-- 👁 **See before you go** — the target URL shows on hover. QR phishing ("quishing") doesn't work here.
-- 🪶 **Lightweight** — a few kilobytes of code, batched decoding that never slows your browsing.
-- 📱 **Works on mobile browsers that support extensions** (Edge for Android, Firefox for Android).
+- 🎚 **Off by default** — nothing is injected into any page until *you* arm it from the toolbar. One click ON for the whole session; it resets to OFF when you close your browser. [Privacy policy →](PRIVACY.md)
+- 👁 **See before you go** — the target URL shows on hover. QR phishing ("quishing") doesn't work here. Non-URL QR codes (Wi-Fi, vCard…) get a non-clickable info badge.
+- 🪶 **Lightweight** — ~20 KB of commented code, zero third-party library, LRU-cached decoding that never decodes the same image twice within 5 seconds.
+- 📱 **Works on Chromium 92+** (Chrome, Edge, Brave, Opera…) including mobile Chromium browsers with extension support (Edge for Android). Firefox shows a discreet "QR API not supported" notice — the native API it would need does not exist there yet.
 
-### What V1 does not do (on purpose)
+### What v0.2.0 does not do (on purpose)
 
-- Non-web QR codes (Wi-Fi, vCard, payment) are ignored — V1 only opens `http/https` links.
+- Non-URL QR codes are shown as an info badge but never opened — only `http/https` links open.
 - PDFs opened in the browser's built-in PDF viewer are not covered yet (planned).
 
 ### Why the "read all sites" permission
 
-The extension reads images from the pages you visit **to detect QR codes in them, locally**. That's the whole story. No access to your history, tabs, or credentials. The full audit path: 4 source files, commented, plus a checksummed decoding library. [Privacy policy →](PRIVACY.md)
+The extension reads images from the pages you visit **to detect QR codes in them, locally** — cross-origin pixels are only readable through the extension's own service worker. That's the whole story. No access to your history, tabs, or credentials. Audit path: 5 commented source files, no third-party library at all, nothing injected while OFF. [Privacy policy →](PRIVACY.md)
 
 ### 🔧 Manual install — Installation manuelle — 手动安装
 
@@ -47,7 +48,7 @@ The extension reads images from the pages you visit **to detect QR codes in them
 2. Open `chrome://extensions` (or `edge://extensions`).
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and select the unzipped folder.
-5. Done — visit any page with a QR code, click the badge.
+5. Click the **Click All QR** toolbar icon and switch it **ON** — QR badges appear on pages. It resets to OFF next time you start the browser.
 
 </details>
 
@@ -58,7 +59,7 @@ The extension reads images from the pages you visit **to detect QR codes in them
 2. Ouvrir `chrome://extensions` (ou `edge://extensions`).
 3. Activer le **Mode développeur** (en haut à droite).
 4. Cliquer **Charger l'extension non empaquetée** et sélectionner le dossier dézippé.
-5. C'est installé — allez sur une page contenant un QR code, cliquez le badge.
+5. Cliquer l'icône **Click All QR** dans la barre d'outils et basculer sur **ON** — les badges apparaissent. Le toggle repasse OFF au prochain démarrage du navigateur.
 
 </details>
 
@@ -77,9 +78,10 @@ The extension reads images from the pages you visit **to detect QR codes in them
 
 ### 🗺 Roadmap
 
-- [ ] V1.1 — settings toggle (pause per-site)
+- [x] v0.2.0 — session toggle (ON/OFF), native decoding only, LRU cache, e2e tests
+- [ ] v1.1 — per-site pause
 - [ ] V2 — PDF viewer support
-- [ ] V2 — non-URL QR content (Wi-Fi, vCard) shown in a safe preview
+- [ ] V2 — rich safe preview for non-URL QR content (Wi-Fi, vCard)
 - [ ] Pro (2,99 € one-time) — history, batch decode, quishing check — *only if 10k+ users*
 
 ### 📄 License
@@ -98,20 +100,21 @@ Un QR code s'affiche **sur ton propre écran** — dans une capture reçue, une 
 
 **Click All QR** détecte les QR codes de n'importe quelle page web et pose un petit badge sur chacun. Clique le badge → le lien s'ouvre dans un nouvel onglet. C'est tout.
 
-- 🔒 **100 % local** — détection et décodage dans ton navigateur. Aucune image envoyée. Aucun serveur, il n'y en a pas.
+- 🔒 **100 % local** — détection et décodage dans ton navigateur, via l'API native `BarcodeDetector`. Aucune image envoyée. Aucun serveur, il n'y en a pas. **Aucune librairie embarquée.**
 - 🚫 **Sans pub, sans compte, sans télémétrie** — rien n'est collecté, jamais.
-- 👁 **Voir avant d'ouvrir** — l'URL cible s'affiche au survol. Le quishing ne passe pas ici.
-- 🪶 **Léger** — quelques kilooctets de code, décodage par lots, zéro ralentissement.
-- 📱 **Marche sur les navigateurs mobiles à extensions** (Edge Android, Firefox Android).
+- 🎚 **Désactivée par défaut** — rien n'est injecté dans les pages tant que tu n'as pas armé l'extension depuis la barre d'outils. Un clic ON pour toute la session ; retour à OFF à la fermeture du navigateur. [Politique de confidentialité →](PRIVACY.md)
+- 👁 **Voir avant d'ouvrir** — l'URL cible s'affiche au survol. Le quishing ne passe pas ici. Les QR non-URL (Wi-Fi, vCard…) affichent un badge informatif non cliquable.
+- 🪶 **Léger** — ~20 Ko de code commenté, zéro librairie tierce, cache LRU qui ne redécode jamais la même image en moins de 5 secondes.
+- 📱 **Marche sur tout navigateur Chromium 92+** (Chrome, Edge, Brave, Opera…) y compris les navigateurs mobiles à extensions (Edge Android). Firefox affiche un bandeau discret « QR API non supportée » — l'API native nécessaire n'y existe pas encore.
 
-### Ce que la V1 ne fait pas (à dessein)
+### Ce que la v0.2.0 ne fait pas (à dessein)
 
-- Les QR non-web (Wi-Fi, vCard, paiement) sont ignorés — la V1 n'ouvre que les liens `http/https`.
+- Les QR non-URL s'affichent en badge informatif mais ne s'ouvrent jamais — seuls les liens `http/https` s'ouvrent.
 - Les PDF ouverts dans le lecteur intégré du navigateur ne sont pas couverts (prévu).
 
 ### Pourquoi la permission « lire tous les sites »
 
-L'extension lit les images des pages visitées **pour y détecter des QR codes, localement**. C'est tout. Pas d'accès à ton historique, tes onglets ou tes identifiants. Chemin d'audit complet : 4 fichiers source commentés + librairie de décodage vérifiée par empreinte. [Politique de confidentialité →](PRIVACY.md)
+L'extension lit les images des pages visitées **pour y détecter des QR codes, localement** — les pixels cross-origin ne sont lisibles que via le service worker de l'extension. C'est tout. Pas d'accès à ton historique, tes onglets ou tes identifiants. Chemin d'audit complet : 5 fichiers source commentés, aucune librairie tierce, rien d'injecté tant que le toggle est OFF. [Politique de confidentialité →](PRIVACY.md)
 
 ---
 

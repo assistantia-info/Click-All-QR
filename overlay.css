@@ -1,6 +1,6 @@
-/* QR cliquable — couche overlay (une seule couche fixe par frame) */
+/* Click All QR v0.2.0 — couche overlay (une seule couche fixe par frame) */
 
-#qr-cliquable-layer {
+#caqr-layer {
   position: fixed;
   left: 0;
   top: 0;
@@ -8,9 +8,12 @@
   height: 0;
   z-index: 2147483646;
   pointer-events: none;
+  font: 12px system-ui, sans-serif;
 }
 
-a.qr-cliquable-badge {
+/* Badge lien (QR encodant http/https) */
+a.caqr-badge,
+span.caqr-badge {
   pointer-events: auto;
   position: fixed;
   width: 26px;
@@ -25,15 +28,41 @@ a.qr-cliquable-badge {
   border: 1px solid rgba(255, 255, 255, 0.25);
   cursor: pointer;
   text-decoration: none;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.02em;
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
-a.qr-cliquable-badge:hover {
+a.caqr-badge:hover {
   transform: scale(1.18);
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
 
-a.qr-cliquable-badge svg {
+a.caqr-badge svg,
+span.caqr-badge svg {
   display: block;
   pointer-events: none;
+}
+
+/* Badge informatif — QR non-URL : visible, jamais cliquable */
+span.caqr-badge--text {
+  cursor: default;
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  border-style: dashed;
+}
+
+/* Bandeau discret — API BarcodeDetector absente (Chrome/Edge < 92) */
+.caqr-unsupported {
+  pointer-events: none;
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(17, 24, 39, 0.82);
+  color: #e5e7eb;
+  font-size: 11px;
+  line-height: 1.4;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }

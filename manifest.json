@@ -1,22 +1,22 @@
 {
   "manifest_version": 3,
   "name": "Click All QR",
-  "version": "0.1.1",
-  "description": "Rend cliquables les QR codes des pages web — 100 % local. Makes QR codes on web pages clickable — 100% local.",
-  "permissions": [],
+  "version": "0.2.0",
+  "description": "Rend cliquables les QR codes des pages web — 100 % local, désactivé par défaut. Makes QR codes on web pages clickable — 100% local, off by default.",
+  "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["vendor/jsQR.js", "content.js"],
-      "css": ["overlay.css"],
-      "run_at": "document_idle",
-      "all_frames": true
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Click All QR",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
-  ],
+  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Click All QR</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon48.png" alt="" width="28" height="28">
+    <div>
+      <h1>Click All QR</h1>
+      <p>The QR on your screen, finally clickable</p>
+    </div>
+  </header>
+
+  <main>
+    <label class="row" for="caqr-toggle">
+      <span id="caqr-label" class="state off">Off — QR codes ignored</span>
+      <span class="switch">
+        <input type="checkbox" id="caqr-toggle" role="switch" aria-label="Enable Click All QR for this session">
+        <i aria-hidden="true"></i>
+      </span>
+    </label>
+    <p id="caqr-hint" class="hint">Turn on to make QR codes clickable on every page. It resets to Off when you close your browser.</p>
+  </main>
+
+  <footer>
+    <span>100% local · no account · no telemetry</span>
+    <span class="ver">v<span id="caqr-version"></span></span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
